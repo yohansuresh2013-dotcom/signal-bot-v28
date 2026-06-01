@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: bz-signal-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python v28.py
