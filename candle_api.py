@@ -1,7 +1,9 @@
-nano requirements.txt # only flask + flask-cors git add . git 
-commit -m "fix railway"from flask import Flask, jsonify, request 
-from flask_cors import CORS import time import random import os
-git push
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import time
+import random
+import os
+
 app = Flask(__name__)
 CORS(app)
 
@@ -44,19 +46,11 @@ def get_candles():
         
         price = close_price
     
-    return jsonify({
-        "success": True,
-        "asset": asset,
-        "candles": candles
-    })
+    return jsonify({"success": True, "asset": asset, "candles": candles})
 
 @app.route('/')
 def home():
-    return jsonify({
-        "status": "Online",
-        "pairs": ["USDBRL-OTC", "USDCOP-OTC", "USDEGP-OTC"],
-        "endpoints": ["/candles?asset=USDBRL-OTC&count=50", "/health"]
-    })
+    return jsonify({"status": "Online", "pairs": ["USDBRL-OTC", "USDCOP-OTC", "USDEGP-OTC"]})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
