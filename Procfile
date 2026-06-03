@@ -1,1 +1,1 @@
-worker: python v28.pyworker
+web: python candle_api.py
