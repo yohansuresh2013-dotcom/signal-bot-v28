@@ -1,11 +1,40 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import time
-import random
+from QuotexAPI import QuotexAPI
+import asyncio
 import os
 
 app = Flask(__name__)
 CORS(app)
+
+QUOTEX_EMAIL = "wasihar465@4nly.com"
+QUOTEX_PASS = "VIKRANTH2009"
+
+async def fetch_real_candles(asset, count=50):
+    api = QuotexAPI(email=QUOTEX_EMAIL, password=QUOTEX_PASS)
+    try:
+        await api.connect()
+        await api.change_balance("PRACTICE")
+        candles = await api.get_candles(asset=asset, period=60)
+        await api.disconnect()
+        
+        result = []
+        for c in candles[-count:]:
+            result.append({
+                "time": str(c.get('time',''))[-8:-3] if c.get('time') else "--:--",
+                "open": float(c.get('open',0)),
+                "high": float(c.get('high',0)),
+                "low": float(c.get('low',0)),
+                "close": float(c.get('close',0)),
+                "isBull": float(c.get('close',0)) >= float(c.get('open',0))
+            })
+        return result
+    except Exception as e:
+        print(f"Quotex error: {e}")
+        return []
+    finally:
+        try: await api.disconnect()
+        except: pass
 
 @app.route('/health')
 def health():
@@ -15,42 +44,15 @@ def health():
 def get_candles():
     asset = request.args.get('asset', 'USDBRL-OTC')
     count = int(request.args.get('count', 50))
-    
-    base_prices = {
-        'USDBRL-OTC': 5.45,
-        'USDCOP-OTC': 4200,
-        'USDEGP-OTC': 50.5
-    }
-    
-    price = base_prices.get(asset, 5.0)
-    candles = []
-    now = time.time()
-    
-    for i in range(count - 1, -1, -1):
-        t = now - i * 60
-        time_str = time.strftime('%H:%M', time.localtime(t))
-        open_price = price
-        change = (random.random() - 0.48) * 0.003 * price
-        close_price = open_price + change
-        high = max(open_price, close_price) + random.random() * 0.002 * price
-        low = min(open_price, close_price) - random.random() * 0.002 * price
-        
-        candles.append({
-            "time": time_str,
-            "open": round(open_price, 5),
-            "high": round(high, 5),
-            "low": round(low, 5),
-            "close": round(close_price, 5),
-            "isBull": close_price >= open_price
-        })
-        
-        price = close_price
-    
-    return jsonify({"success": True, "asset": asset, "candles": candles})
+    try:
+        candles = asyncio.run(fetch_real_candles(asset, count))
+        return jsonify({"success": True, "asset": asset, "candles": candles})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 @app.route('/')
 def home():
-    return jsonify({"status": "Online", "pairs": ["USDBRL-OTC", "USDCOP-OTC", "USDEGP-OTC"]})
+    return jsonify({"status": "Online", "pairs": ["USDBRL-OTC","USDCOP-OTC","USDEGP-OTC"]})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
