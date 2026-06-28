@@ -1,4 +1,1 @@
-flask
-flask-cors
-git+https://github.com/ChipaDevTeam/QuotexAPI.git
-curl_cffi
+python-telegram-bot==20.7
